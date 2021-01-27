@@ -1,6 +1,7 @@
 import scrapy
 from scrapy.selector import Selector
-
+import copy
+import logging
 class DemoSpider(scrapy.Spider):
     name = "demo_spider"
     start_urls = ['https://www.baidu.com/']
@@ -35,4 +36,17 @@ class DemoSpider(scrapy.Spider):
     }
 
     def parse(self, response):
+        headers = eval(str(response.headers))
+        meta = copy.deepcopy(response.meta)
         print("hello world")
+
+        # 请求二级页面(详情页)，要封装一致的headers，主要是cookie的传递，避免反爬
+        # yield scrapy.Request(
+        #     url=detail_url,
+        #     headers=headers,
+        #     meta=meta,
+        #     callback=self.parse_detail,
+        #     dont_filter=True)
+
+    def parse_detail(self,response):
+        logging.info("进入二级页面")

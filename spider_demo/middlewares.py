@@ -67,6 +67,9 @@ class SpiderDemoDownloaderMiddleware:
     # scrapy acts as if the downloader middleware does not modify the
     # passed objects.
 
+    def __init__(self):
+        super(SpiderDemoDownloaderMiddleware, self).__init__()
+        self.ua = UserAgent()
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -85,6 +88,9 @@ class SpiderDemoDownloaderMiddleware:
         # - or return a Request object
         # - or raise IgnoreRequest: process_exception() methods of
         #   installed downloader middleware will be called
+
+        # 所有网站请求最好要封装User-Agent
+        request.headers['User-Agent'] = self.ua.random
         return None
 
     def process_response(self, request, response, spider):
@@ -176,7 +182,7 @@ class SpiderDemoIIDownloaderMiddleware:
         self.options.set_preference('dom.popup_maximum', 10)
         # self.options.add_argument('--headless')
 
-        super(SpiderDemoDownloaderMiddleware, self).__init__()
+        super(SpiderDemoIIDownloaderMiddleware, self).__init__()
         self.ua = UserAgent()
 
     @classmethod
