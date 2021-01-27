@@ -28,6 +28,7 @@ PyDispatcher==2.0.5
 PyHamcrest==2.0.2
 pyinstaller==4.2
 pyinstaller-hooks-contrib==2020.11
+PyMySQL==0.10.1
 pyOpenSSL==19.1.0
 pywin32-ctypes==0.2.0
 queuelib==1.5.0
