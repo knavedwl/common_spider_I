@@ -2,11 +2,13 @@ import scrapy
 from scrapy.selector import Selector
 import copy
 import logging
+from spider_demo.items import SpiderDemoItem
+
+
 class DemoSpider(scrapy.Spider):
     name = "demo_spider"
     start_urls = ['https://www.baidu.com/']
     allowed_domains = []
-
 
     '''
     · settings文件是所有spider的公用配置文件
@@ -38,6 +40,7 @@ class DemoSpider(scrapy.Spider):
     def parse(self, response):
         headers = eval(str(response.headers))
         meta = copy.deepcopy(response.meta)
+
         print("hello world")
 
         # 请求二级页面(详情页)，要封装一致的headers，主要是cookie的传递，避免反爬
@@ -48,5 +51,5 @@ class DemoSpider(scrapy.Spider):
         #     callback=self.parse_detail,
         #     dont_filter=True)
 
-    def parse_detail(self,response):
+    def parse_detail(self, response):
         logging.info("进入二级页面")

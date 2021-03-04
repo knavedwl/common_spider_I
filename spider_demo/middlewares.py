@@ -11,7 +11,7 @@ from selenium.webdriver.firefox.options import Options as firefox_options
 from selenium import webdriver
 from scrapy.http import HtmlResponse
 from fake_useragent import UserAgent
-
+import logging
 
 class SpiderDemoSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
@@ -165,6 +165,7 @@ class SpiderDemoIISpiderMiddleware:
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
 
+from browsermobproxy import Server
 class SpiderDemoIIDownloaderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
     # scrapy acts as if the downloader middleware does not modify the
@@ -182,6 +183,11 @@ class SpiderDemoIIDownloaderMiddleware:
         self.options.set_preference('dom.popup_maximum', 10)
         # self.options.add_argument('--headless')
 
+
+        server = Server(r'Browsermob-Proxy下载包解压路径\browsermob-proxy-2.1.4\bin\browsermob-proxy.bat')
+        server.start()
+        proxy = server.create_proxy()
+        self.options.set_preference('proxy-server', proxy.proxy)
         super(SpiderDemoIIDownloaderMiddleware, self).__init__()
         self.ua = UserAgent()
 
@@ -225,15 +231,47 @@ class SpiderDemoIIDownloaderMiddleware:
         headers['Cookie'] = cookie
 
         url = request.url
-        result = True
-        # while result:
-        #
-        #     list = spider.driver.find_elements_by_xpath("//tbody//tr")
-        #     if len(list) > 0:
-        #         result = False
-        body = spider.driver.page_source
-        return HtmlResponse(url=url, headers=headers, body=body, encoding='utf-8', request=request)
 
+
+        for window_handle in spider.driver.window_handles:
+            spider.driver.switch_to.window(window_handle)
+
+            if (
+                    spider.driver.current_url.find('about:blank') > -1
+                    or spider.driver.current_url == 'data:,') \
+                    and window_handle != spider.driver.window_handles[0]:
+                r = True
+                while r:
+                    if spider.driver.current_url.find('about:blank') < 0 and spider.driver.current_url != 'data:,':
+                        r = False
+
+                url_is_blank = True
+
+
+            if spider.driver.current_url == url:
+                spider.dict_url_handle[url] = window_handle
+                break
+        if url in spider.dict_url_handle:
+            spider.driver.switch_to.window(window_handle)
+            result = True
+            if "detail" not in response.meta:
+                spider.driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
+                while result:
+                    list = spider.driver.find_elements_by_xpath("//a[@class='wow fadeInUp animated animated']")
+                    if len(list) > 1:
+                        result = False
+                    else:
+                        # 移动到页面最底部
+                        spider.driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
+            else:
+                while result:
+                    list = spider.driver.find_elements_by_xpath("//a[@class='wow fadeInUp animated animated']")
+                    if len(list) > 1:
+                        result = False
+            body = spider.driver.page_source
+            return HtmlResponse(url=url, headers=headers, body=body, encoding='utf-8', request=request)
+        else:
+            logging.info("窗口没找到")
     # 判断当前窗口加载的页面是否加载完成
     def is_load_complete(self, spider):
 
@@ -258,3 +296,6 @@ class SpiderDemoIIDownloaderMiddleware:
         spider.driver = webdriver.Firefox(options=self.options
 
                                           )  # 指定使用的浏览器
+        # 浏览器打开的url对应的窗口句柄
+        spider.dict_url_handle = {'url': 0}
+        spider.open_url = {'url': 0}
